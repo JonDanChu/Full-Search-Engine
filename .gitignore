@@ -1,0 +1,8 @@
+/Combiner/bigram-index/
+/Combiner/Index/
+/DEV/
+/practice/
+
+__pycache__/
+
+*.json
