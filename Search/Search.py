@@ -13,25 +13,25 @@ try:
 except ImportError:
     import Proximity, Cossim, Bigram, Importance
 
-INVERTED_INDEX = Path("./inverted-index.json")
-DOC_PATH = Path("./DEV")
-DOC_ID_PATH = Path("./Indexer/doc_ids.json")
-
 BASE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = BASE_DIR.parent
 
 load_dotenv(REPO_ROOT / ".env")
 
-INVERTED_INDEX = REPO_ROOT / "Combiner" / "index"
 _doc_path = os.environ.get("DOC_PATH")
 if not _doc_path:
     raise EnvironmentError("DOC_PATH environment variable is not set. Example: export DOC_PATH=./DEV")
 
-PAGERANK_PATH = BASE_DIR / "pagerank.json"
 DOC_PATH = Path(_doc_path)
 if not DOC_PATH.is_absolute():
     DOC_PATH = REPO_ROOT / DOC_PATH
+
+INVERTED_INDEX = REPO_ROOT / "Combiner" / "index"
+
 DOC_ID_PATH = REPO_ROOT / "Indexer" / "doc_ids.json"
+
+PAGERANK_PATH = BASE_DIR / "pagerank.json"
+
 PROXIMITY_WEIGHT = 0.35
 BIGRAM_WEIGHT = 0.10
 IMPORTANCE_WEIGHT = 0.20

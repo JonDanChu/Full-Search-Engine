@@ -2,3 +2,5 @@ lxml
 nltk
 numpy
 python-dotenv
+fastapi
+uvicorn[standard]
