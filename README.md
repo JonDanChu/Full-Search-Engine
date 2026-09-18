@@ -1,174 +1,168 @@
-# CS-121-Search-Engine
+# Full Search Engine
 
-For milestones 1-3. Capable search engine!
+A local full-text search engine for a crawled document corpus. The project builds an inverted index from HTML documents, ranks pages, exposes search through a FastAPI service, and provides a React web interface.
 
-## Setup
+## Features
 
-Create and activate a virtual environment, then install dependencies:
+- Boolean AND retrieval across normalized and stemmed query terms
+- Ranking with TF-IDF cosine similarity, term proximity, phrase/bigram matches, HTML element importance, and PageRank
+- Near-duplicate filtering while indexing
+- FastAPI JSON API with interactive documentation
+- React and TypeScript web interface powered by Vite
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+## Tech stack
+
+- Python 3.10+
+- FastAPI and Uvicorn
+- NLTK, NumPy, and lxml
+- React, TypeScript, and Vite
+
+## Project structure
+
+```text
+Backend/     FastAPI application
+Combiner/    Partial-index merger and merged index files
+Indexer/     Corpus indexer and document-ID mapping
+Search/      Query processing and ranking modules
+frontend/    React web application
 ```
 
-To deactivate the virtual environment when you're done:
+## Start the web app
+
+The web app has two processes: the API server and the frontend development server. Run them in separate terminals from the repository root.
+
+### 1. Prerequisites
+
+Install:
+
+- Python 3.10 or newer
+- Node.js 20.19+ or 22.12+
+- npm
+
+The checked-in index under `Combiner/index/` and document mapping at `Indexer/doc_ids.json` let you search without rebuilding the corpus first.
+
+### 2. Configure and install the backend
+
+Create and activate a Python virtual environment:
 
 ```bash
-deactivate
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
 
-## Configuration
+On Windows PowerShell, activate the environment with:
 
-Create a `.env` file in the repo root with the following variables:
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Create a `.env` file in the repository root:
 
 ```properties
 DOC_PATH=./DEV
 ```
 
-| Variable   | Description                        |
-| ---------- | ---------------------------------- |
-| `DOC_PATH` | Path to the document corpus folder |
+`DOC_PATH` points to the corpus directory. The backend expects this setting even when it uses the existing index. If your corpus is elsewhere, replace `./DEV` with that path.
 
-## Run the Indexer
+### 3. Start the API
 
-Create the partial inverted index:
+In the first terminal, from the repository root:
+
+```bash
+python3 -m uvicorn Backend.main:app --reload
+```
+
+The API is available at [http://127.0.0.1:8000](http://127.0.0.1:8000). You can confirm it is running at [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health), and browse the interactive API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+
+### 4. Start the frontend
+
+In a second terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser. During development, Vite forwards requests beginning with `/api` to the backend on port `8000`.
+
+## API usage
+
+Search with `GET /api/search`:
+
+```bash
+curl "http://127.0.0.1:8000/api/search?q=machine%20learning&limit=10"
+```
+
+Parameters:
+
+| Parameter | Required | Default | Description |
+| --- | --- | --- | --- |
+| `q` | Yes | — | Search query, from 1 to 200 characters |
+| `limit` | No | `10` | Number of results to return, from 1 to 50 |
+
+Example response:
+
+```json
+{
+  "query": "machine learning",
+  "total": 42,
+  "elapsed_ms": 3.27,
+  "results": [
+    {
+      "url": "https://example.com/page",
+      "score": 1.2345
+    }
+  ]
+}
+```
+
+## Rebuild the search data
+
+You only need these steps when the document corpus changes. Make sure `DOC_PATH` in `.env` points to a corpus whose immediate subdirectories contain the crawled JSON documents.
+
+From the repository root, build partial indexes and the document-ID mapping:
 
 ```bash
 python3 Indexer/Indexer.py
 ```
 
-## Merge Partial Indexes
-
-Merge the batch files from the repo root:
+Merge the partial indexes into the files used by search:
 
 ```bash
 python3 Combiner/Combiner.py
 ```
 
-## Compute PageRank
-
-Build the precomputed PageRank scores from the repo root:
+Compute PageRank scores:
 
 ```bash
 python3 Search/PageRank.py
 ```
 
-## Run Search
+## Command-line search
 
-Start the search interface:
+To query the index without the web app:
 
 ```bash
 python3 Search/Search.py
 ```
 
-`Search/pagerank.json` is optional at runtime. If it exists, search uses it as a small authority boost during ranking.
+Enter a query at the prompt. Search terms are matched using AND semantics. Enter `quit`, `exit`, or a blank line to stop.
 
-## Run the API
+## Frontend commands
 
-Start the API server from the repo root:
-
-```bash
-python3 -m uvicorn Api.Api:app --host 0.0.0.0 --port 8000 --reload
-```
-
-The API will be available at `http://localhost:8000`. Interactive docs are at `http://localhost:8000/docs`.
-
-### Endpoint
-
-```
-GET /search
-```
-
-| Parameter | Type    | Default  | Description                               |
-| --------- | ------- | -------- | ----------------------------------------- |
-| `q`       | string  | required | Search query (terms are ANDed by default) |
-| `limit`   | integer | 5        | Number of results to return (1–50)        |
-
-### Example
+Run these inside `frontend/`:
 
 ```bash
-curl "http://localhost:8000/search?q=machine+learning&limit=5"
+npm run dev      # start the development server
+npm run build    # type-check and create a production build
+npm run preview  # preview the production build locally
+npm run lint     # run ESLint
 ```
 
-```json
-{
-  "query": "machine learning",
-  "normalized_tokens": ["machin", "learn"],
-  "total_results": 42,
-  "returned_results": 5,
-  "results": ["https://example.com/page1", "https://example.com/page2"],
-  "query_time_ms": 3.271,
-  "proximity_used": true
-}
-```
+## Troubleshooting
 
-## Run the Web Frontend
-
-The web frontend is a Vite + React app that talks to the API. Make sure the API (see "Run the API" above) is running before you start the frontend.
-
-> **Note:** These instructions assume you are running behind a JupyterHub proxy. Throughout this section, replace `<HUB_HOST>` with your hub's hostname (e.g. `staging-hub.ics.uci.edu`) and `<USERNAME>` with your hub username (e.g. `noahmk1`).
-
-### 1. Move into the frontend directory
-
-```bash
-cd Web/search-engine
-```
-
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-### 3. Configure `vite.config.ts` for the proxy
-
-Because the dev server is served through the JupyterHub proxy rather than directly, Vite needs to be told which host is allowed to connect and where to route its Hot Module Reload (HMR) websocket. Without this, the browser will either reject the host or fail to establish the live-reload connection.
-
-Open `vite.config.ts` and make sure it matches the following, updating `allowedHosts` and `hmr.path` for your own hub host and username:
-
-```typescript
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
-  base: './',
-  plugins: [react()],
-  server: {
-    host: '0.0.0.0',
-    allowedHosts: ['<HUB_HOST>'],
-    hmr: {
-      clientPort: 443,
-      protocol: 'wss',
-      path: '/user/<USERNAME>/vscode/proxy/5173/',
-    },
-  },
-});
-```
-
-What these settings do:
-
-- **`base: './'`** — uses relative asset paths so files resolve correctly under the proxy prefix instead of being requested from the server root.
-- **`allowedHosts`** — whitelists the hub hostname so Vite doesn't block the proxied request.
-- **`hmr.clientPort: 443` / `protocol: 'wss'`** — tells the HMR client to connect over secure websockets on the standard HTTPS port, since the proxy terminates TLS.
-- **`hmr.path`** — routes the HMR websocket through the same proxy path the app is served from.
-
-### 4. Build the app
-
-```bash
-npm run build
-```
-
-### 5. Preview the built app
-
-```bash
-npm run preview -- --host 0.0.0.0
-```
-
-### 6. Open it in your browser
-
-The preview server runs on port `4173`. Navigate to the following URL, including the trailing slash:
-
-```
-https://<HUB_HOST>/user/<USERNAME>/vscode/proxy/4173/
-```
+- **`DOC_PATH environment variable is not set`**: create `.env` in the repository root and add `DOC_PATH=./DEV` (or the correct corpus path).
+- **The frontend reports a failed request**: make sure the FastAPI server is still running on port `8000`.
+- **The backend cannot find index data**: confirm `Combiner/index/` and `Indexer/doc_ids.json` exist, or rebuild them using the steps above.
+- **Port already in use**: stop the process using port `8000` or `5173`, then start the corresponding server again.
