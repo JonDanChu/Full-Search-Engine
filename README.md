@@ -159,10 +159,3 @@ npm run build    # type-check and create a production build
 npm run preview  # preview the production build locally
 npm run lint     # run ESLint
 ```
-
-## Troubleshooting
-
-- **`DOC_PATH environment variable is not set`**: create `.env` in the repository root and add `DOC_PATH=./DEV` (or the correct corpus path).
-- **The frontend reports a failed request**: make sure the FastAPI server is still running on port `8000`.
-- **The backend cannot find index data**: confirm `Combiner/index/` and `Indexer/doc_ids.json` exist, or rebuild them using the steps above.
-- **Port already in use**: stop the process using port `8000` or `5173`, then start the corresponding server again.
